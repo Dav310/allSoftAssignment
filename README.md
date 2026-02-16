@@ -1,16 +1,65 @@
-# React + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Front-End Developer Assignment – Allsoft
 
-Currently, two official plugins are available:
+This project is the frontend implementation of the **Login & Authentication Module** for the Document Management System.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Currently implemented features include:
 
-## React Compiler
+- OTP Based Login Interface
+- API Integration for OTP generation and validation
+- Token handling
+- Static Admin Page UI
+- Responsive modern UI design
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+---
 
-## Expanding the ESLint configuration
+## Tech Stack Used
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- React (Vite)
+- Tailwind CSS
+- Axios
+- React Router DOM
+- React Toastify
+
+---
+
+## Features Implemented
+
+## OTP Based Login
+
+- Mobile number input validation (10 digits)
+- Generate OTP using backend API
+- 6-digit premium OTP input UI
+- Auto focus next input field
+- OTP verification using API
+- Token stored in localStorage after successful login
+- Redirect to Dashboard after verification
+- Resend OTP with countdown timer
+- Fully responsive glassmorphism UI design
+
+---
+
+## API Integration
+
+Integrated backend APIs:
+
+- `POST /generateOTP`
+- `POST /validateOTP`
+
+Axios instance configuration includes:
+- Base URL setup 
+- Automatic token attachment via interceptor
+
+---
+
+## Admin Page (Static UI)
+
+- Username field
+- Password field
+- Create User button
+- Navigation between Login and Admin page
+
+---
+
+## Folder Structure (Current)
+

@@ -24,7 +24,7 @@ const AdminPage = () => {
   };
 
   return (
-    <div className="flex relative justify-center items-center px-4 min-h-screen login-bg">
+    <div className="flex relative justify-center items-center px-4 min-h-screen app-bg">
 
       {/* Glow Background Effects */}
       <div className="glow-circle glow1"></div>

@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import "/public/css/login.css";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { generateOtpApi, validateOtpApi } from "../api/authApi";
+
+import "/public/css/login.css";
 
 
 const Login = () => {
@@ -23,14 +25,41 @@ const Login = () => {
     return () => clearInterval(interval);
   }, [showOtp, timer]);
 
-  const handleSendOtp = () => {
+  const sendOtpRequest = async (type = "generate") => {
+
     if (mobile.length !== 10) {
       toast.error("Enter valid 10 digit mobile number");
       return;
     }
-    setShowOtp(true);
-    setTimer(30);
+    try {
+      await generateOtpApi(mobile);
+      setShowOtp(true);
+      setTimer(30);
+
+      if (type === "resend") {
+
+        toast.success("OTP Resent Successfully");
+
+      } else {
+
+        toast.success("OTP Sent Successfully");
+
+      }
+    } catch (error) {
+
+      console.error("Error generating OTP:", error);
+      toast.error("Failed to generate OTP");
+
+    }
   };
+
+  const handleSendOtp = () => {
+    sendOtpRequest("generate");
+  }
+
+  const handleResendOtp = () => {
+    sendOtpRequest("resend");
+  }
 
   const handleOtpChange = (value, index) => {
     if (!/^\d?$/.test(value)) return;
@@ -44,22 +73,40 @@ const Login = () => {
     }
   };
 
-  const handleVerifyOtp = () => {
+  const handleVerifyOtp = async () => {
     const finalOtp = otp.join("");
+
     if (finalOtp.length !== 6) {
       toast.error("Enter complete OTP");
       return;
+
     }
-    toast.success("OTP Verified");
+    try {
+
+      const response = await validateOtpApi(mobile, finalOtp);
+      // console.log(response);
+
+      const token = response.data.data?.token;
+
+      if (token) {
+
+        localStorage.setItem("token", token);
+        toast.success("OTP Verified");
+        navigate("/dashboard");
+
+      }
+
+    } catch (error) {
+
+      console.error("Error validating OTP:", error);
+      toast.error("Failed to validate OTP");
+
+    }
   };
 
-  const handleResend = () => {
-    setTimer(30);
-    toast.success("OTP Resent");
-  };
 
   return (
-    <div className="flex relative justify-center items-center px-4 min-h-screen login-bg">
+    <div className="flex relative justify-center items-center px-4 min-h-screen app-bg">
 
       {/* Glow Effects */}
       <div className="glow-circle glow1"></div>
@@ -127,16 +174,16 @@ const Login = () => {
 
             {/* Timer */}
             <div className="text-sm text-center">
-              {timer > 0 ? (
-                <p>Resend OTP in {timer}s</p>
-              ) : (
-                <button
-                  onClick={handleResend}
-                  className="underline hover:text-gray-300"
-                >
-                  Resend OTP
-                </button>
-              )}
+              <button
+                onClick={handleResendOtp}
+                disabled={timer > 0}
+                className={`underline transition ${timer > 0
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:text-gray-300"
+                  }`}
+              >
+                {timer > 0 ? `Resend OTP in ${timer}s` : "Resend OTP"}
+              </button>
             </div>
           </>
         )}
