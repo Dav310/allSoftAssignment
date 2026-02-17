@@ -55,6 +55,7 @@ const Login = () => {
 
   const handleSendOtp = () => {
     sendOtpRequest("generate");
+
   }
 
   const handleResendOtp = () => {
