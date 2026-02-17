@@ -61,5 +61,17 @@ Axios instance configuration includes:
 
 ---
 
-## Folder Structure (Current)
+# Document Management Module
+
+## File Upload Component
+
+Implemented UI with:
+
+- Date Picker
+- Category Dropdown (Personal / Professional) → `major_head`
+- Dynamic Subcategory Dropdown (Names / Departments) → `minor_head`
+- Tag Input Field (Token/Chip style UI)
+- Remarks Field
+- File validation (Only Image & PDF allowed)
+- Clean responsive layout
 

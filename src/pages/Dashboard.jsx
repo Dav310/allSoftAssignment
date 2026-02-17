@@ -1,11 +1,24 @@
 import { useState } from "react";
+import { uploadDocument } from "../api/authApi";
+import { toast } from "react-toastify";
+
+
 import "/public/css/dashboard.css";
+import { useNavigate } from "react-router-dom";
 
 
 const Dashboard = () => {
+
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  const [selectDate, setSelectDate] = useState("");
   const [category, setCategory] = useState("");
   const [subCategory, setSubCategory] = useState("");
+  const [tags, setTags] = useState("");
+  const [remarks, setRemarks] = useState("")
+  const [selectFile, setSelectFile] = useState(null)
+
+  const navigate = useNavigate();
 
   // Category Options
   const personalOptions = ["John", "Tom", "Emily"];
@@ -19,6 +32,112 @@ const Dashboard = () => {
         ? professionalOptions
         : [];
 
+  // Select File
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+
+    if (!file) return;
+
+    // Allow file type 
+    const allowedType = [
+      "image/png",
+      "image/jpeg",
+      "application/pdf",
+    ]
+
+    if (!allowedType.includes(file.type)) {
+      toast.error("Only Image & PDF files are allowed");
+      return;
+    }
+    setSelectFile(file);
+
+  }
+
+  // Convert date from yyyy-MM-dd to dd-MM-yyyy
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    const [year, month, day] = dateString.split("-");
+    return `${day}-${month}-${year}`;
+  };
+
+  // Convert comma-separated tags 
+  const formatTags = (tagsString) => {
+    if (!tagsString) return [];
+    return tagsString
+      .split(",")
+      .map(tag => tag.trim())
+      .filter(tag => tag !== "")
+      .map(tag => ({ tag_name: tag }));
+  };
+
+  //Handle Submit 
+  const handleSubmit = async () => {
+    const userId = localStorage.getItem("user_id");
+    console.log("User Id :", userId);
+
+
+    if (!selectFile || !category || !subCategory || !selectDate || !tags || !remarks) {
+
+      toast.error("Please fill all required fields")
+      return;
+
+    }
+
+    try {
+      const formData = new FormData();
+
+      formData.append("file", selectFile);
+
+      // Convert date to dd-MM-yyyy format
+      const formattedDate = formatDate(selectDate);
+
+      // Convert tags to required format
+      const formattedTags = formatTags(tags);
+
+      // convert array into String
+      formData.append(
+        "data",
+        JSON.stringify({
+          user_id: userId,
+          document_date: formattedDate,
+          major_head: category,
+          minor_head: subCategory,
+          document_remarks: remarks,
+          tags: formattedTags
+        })
+      );
+
+      const response = await uploadDocument(formData);
+      console.log("Upload Data :", response);
+
+
+      // Reset form 
+      setSelectDate("");
+      setCategory("");
+      setSubCategory("");
+      setTags("");
+      setRemarks("");
+      setSelectFile(null);
+      setIsDrawerOpen(false);
+
+      toast.success("Document Upload Successfully")
+
+
+    } catch (error) {
+      console.error("Upload Error :", error);
+      toast.error("Upload Document Failed")
+
+    }
+
+  }
+
+  // Handle Logout
+  const handleLogOut = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user_id");
+    toast.success("Logout Successfully")
+    navigate("/login")
+  }
 
   return (
     <div className="min-h-screen bg-slate-900 text-white relative">
@@ -29,7 +148,9 @@ const Dashboard = () => {
           Dashboard
         </h1>
 
-        <button className="bg-red-600 px-4 py-2 rounded-lg hover:bg-red-700 transition">
+        <button 
+        onClick={handleLogOut}
+        className="bg-red-600 px-4 py-2 rounded-lg hover:bg-red-700 transition">
           Logout
         </button>
       </div>
@@ -174,6 +295,8 @@ const Dashboard = () => {
               <input
                 type="date"
                 className="dashboard-input text-black w-full"
+                value={selectDate}
+                onChange={(e) => setSelectDate(e.target.value)}
               />
             </div>
 
@@ -224,8 +347,10 @@ const Dashboard = () => {
               <label className="block mb-2">Tags</label>
               <input
                 type="text"
-                placeholder="Tags"
+                placeholder="Enter tags separated by commas (e.g., HR, 2024)"
                 className="dashboard-input text-black w-full"
+                value={tags}
+                onChange={(e) => setTags(e.target.value)}
               />
             </div>
 
@@ -236,35 +361,50 @@ const Dashboard = () => {
                 placeholder="Remarks"
                 rows="3"
                 className="dashboard-input text-black w-full"
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
               ></textarea>
             </div>
 
             <div className="flex-1 border-2 border-dashed border-gray-400 rounded-xl p-8 text-center hover:border-blue-500 transition">
               <div className="flex flex-col justify-center items-center h-full">
-                <p className="text-gray-300">
-                  Drag & drop your file here
-                </p>
 
-                <p className="text-xs text-gray-400 mt-2">or</p>
+                {/* Input */}
+                <input
+                  type="file"
+                  accept=".png, .jpg, .jpeg, .pdf"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  id="fileUpload"
+                />
 
-                <button className="mt-4 px-6 py-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition">
+                <label
+                  htmlFor="fileUpload"
+                  className="mt-4 px-6 py-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition cursor-pointer"
+                >
                   Choose File
-                </button>
+                </label>
+
+                {selectFile && (
+                  <p className="mt-4 text-green-400 text-sm">
+                    Selected : {selectFile.name}
+                  </p>
+                )}
 
                 <p className="text-xs mt-4 text-gray-400">
                   Only Image & PDF allowed
                 </p>
+
               </div>
             </div>
-
-
-
-
 
           </div>
 
           <div>
-            <button className="w-full py-2 mt-4 bg-green-600 rounded-lg hover:bg-green-700 transition">
+            <button
+              onClick={handleSubmit}
+              className="w-full py-2 mt-4 bg-green-600 rounded-lg hover:bg-green-700 transition"
+            >
               Submit
             </button>
           </ div>

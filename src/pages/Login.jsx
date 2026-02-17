@@ -88,10 +88,13 @@ const Login = () => {
       // console.log(response);
 
       const token = response.data.data?.token;
+        
 
       if (token) {
 
         localStorage.setItem("token", token);
+        localStorage.setItem("user_id", response.data.data?.user_id);
+        
         toast.success("OTP Verified");
         navigate("/dashboard");
 
