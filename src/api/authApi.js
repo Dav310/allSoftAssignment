@@ -23,3 +23,15 @@ export const uploadDocument = (formData) => {
     },
   });
 };
+
+//  Search Document
+export const searchDocument = (payload) => {
+  return axiosInstance.post("/searchDocumentEntry", payload);
+};
+
+// Fetch all tags
+export const fetchAllTags = (term) => {
+  return axiosInstance.post("/documentTags", 
+    {term : term}
+  );
+};

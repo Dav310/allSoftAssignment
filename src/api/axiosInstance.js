@@ -19,6 +19,9 @@ axiosInstance.interceptors.request.use((config) => {
     config.headers.user_id = userId;
   }
 
+  // Debugging: Check if headers are attached
+  console.log("Request Headers:", config.headers);
+
   return config;
 });
 
