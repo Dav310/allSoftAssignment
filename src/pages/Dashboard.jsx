@@ -5,18 +5,27 @@ import { toast } from "react-toastify";
 
 import "/public/css/dashboard.css";
 import { useNavigate } from "react-router-dom";
+import { FaDownload, FaEye } from "react-icons/fa";
+import axiosInstance from "../api/axiosInstance";
 
 
 const Dashboard = () => {
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-
+  // Form data
   const [selectDate, setSelectDate] = useState("");
   const [category, setCategory] = useState("");
   const [subCategory, setSubCategory] = useState("");
   const [tags, setTags] = useState("");
   const [remarks, setRemarks] = useState("")
   const [selectFile, setSelectFile] = useState(null)
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState(null);
+
+  const [allTags, setAllTags] = useState([]);
+  const [showAllTags, setShowAllTags] = useState(false);
+
+
 
   // Fetch document 
   const [documents, setDocuments] = useState([]);
@@ -27,6 +36,7 @@ const Dashboard = () => {
   const [searchTags, setSearchTags] = useState("");
   const [searchFromDates, setSearchFromDates] = useState("");
   const [searchToDates, setSearchToDates] = useState("");
+
 
 
   // Navigate
@@ -88,7 +98,12 @@ const Dashboard = () => {
     console.log("User Id :", userId);
 
 
-    if (!selectFile || !category || !subCategory || !selectDate || !tags || !remarks) {
+    if (!selectFile ||
+      !category.trim() ||
+      !subCategory.trim() ||
+      !selectDate ||
+      !tags.trim() ||
+      !remarks.trim()) {
 
       toast.error("Please fill all required fields")
       return;
@@ -120,10 +135,7 @@ const Dashboard = () => {
         })
       );
 
-      const response = await uploadDocument(formData);
-      console.log("Upload Data :", response);
-
-
+      await uploadDocument(formData);
       // Reset form 
       setSelectDate("");
       setCategory("");
@@ -175,6 +187,23 @@ const Dashboard = () => {
       toast.error("Search failed");
     }
   }
+    ;
+
+  const fetchTags = async () => {
+    try {
+      const response = await axiosInstance.post(
+        "/documentTags",
+        { term: "" },
+      );
+
+      console.log("Tags Data :", response.data);
+      setAllTags(response.data.data || []);
+
+    } catch (error) {
+      console.error("Fetch Tags Error:", error.response || error);
+    }
+  };
+
 
   // Handle Clear
   const handleClear = () => {
@@ -184,7 +213,6 @@ const Dashboard = () => {
     setSearchToDates("");
     fetchDocuments();
   }
-
 
   // Fetch Document
   const fetchDocuments = async () => {
@@ -208,7 +236,6 @@ const Dashboard = () => {
       });
 
       // Backend ka actual response structure check karo
-      console.log("Fetched Documents:", response.data.data);
       setDocuments(response.data.data || []);
 
     } catch (error) {
@@ -221,7 +248,22 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchDocuments();
+    fetchTags();
   }, []);
+
+  // Handle Download
+  const handleDownload = (doc) => {
+    const fileName = doc.file_url.split("/").pop().split("?")[0];
+
+    const a = document.createElement("a");
+    a.href = doc.file_url;
+    a.target = "_blank";
+    a.download = fileName;
+
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
 
   // Handle Logout
   const handleLogOut = () => {
@@ -230,8 +272,6 @@ const Dashboard = () => {
     toast.success("Logout Successfully")
     navigate("/")
   }
-
-
 
   return (
     <div className="min-h-screen bg-slate-900 text-white relative">
@@ -255,7 +295,7 @@ const Dashboard = () => {
         {/*  Search Section  */}
         <div className="bg-slate-800 p-6 rounded-xl mb-6 shadow-md">
 
-          <div className="grid md:grid-cols-6 gap-4 items-end">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
 
             {/* Category */}
             <div className="flex flex-col">
@@ -270,17 +310,6 @@ const Dashboard = () => {
               </select>
             </div>
 
-            {/* Tags */}
-            <div className="flex flex-col">
-              <label className="mb-2 text-sm">Tags</label>
-              <input
-                value={searchTags}
-                onChange={(e) => setSearchTags(e.target.value)}
-                type="text"
-                placeholder="Tags"
-                className="dashboard-input text-black w-full"
-              />
-            </div>
 
             {/* From Date */}
             <div className="flex flex-col">
@@ -329,18 +358,32 @@ const Dashboard = () => {
         </div>
 
         {/*  Action Bar  */}
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">
-            Uploaded Documents
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
+
+          {/* Title */}
+          <h2 className="text-xl font-semibold text-center sm:text-left">
+            Documents
           </h2>
 
-          <button
-            onClick={() => setIsDrawerOpen(true)}
-            className="bg-indigo-600 px-5 py-2 rounded-lg hover:bg-indigo-700 transition"
-          >
-            + Add Document
-          </button>
+          {/* Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+
+            <button
+              className="flex items-center justify-center gap-2 bg-green-600 px-5 py-2 rounded-lg hover:bg-green-700 transition w-full sm:w-auto"
+            >
+              <FaDownload /> Download All
+            </button>
+
+            <button
+              onClick={() => setIsDrawerOpen(true)}
+              className="bg-indigo-600 px-5 py-2 rounded-lg hover:bg-indigo-700 transition w-full sm:w-auto"
+            >
+              + Add Document
+            </button>
+
+          </div>
         </div>
+
 
         {/*  Document Table  */}
         <div className="bg-slate-800 rounded-xl shadow-md overflow-hidden">
@@ -349,28 +392,11 @@ const Dashboard = () => {
               <thead className="bg-slate-700">
                 <tr>
                   <th className="p-4">Category</th>
-                  <th className="p-4">Tags</th>
                   <th className="p-4">Date</th>
+                  <th className="p-4">Remarks</th>
                   <th className="p-4">Actions</th>
                 </tr>
               </thead>
-
-              {/* <tbody>
-                <tr className="border-t border-slate-600 hover:bg-slate-700 transition">
-                  <td className="p-4">invoice.pdf</td>
-                  <td className="p-4">Professional</td>
-                  <td className="p-4">HR, 2024</td>
-                  <td className="p-4">12/03/2024</td>
-                  <td className="p-4 space-x-3 text-center">
-                    <button className="text-blue-400 hover:underline">
-                      Preview
-                    </button>
-                    <button className="text-green-400 hover:underline">
-                      Download
-                    </button>
-                  </td>
-                </tr>
-              </tbody> */}
               <tbody>
                 {loading ? (
                   <tr>
@@ -391,18 +417,25 @@ const Dashboard = () => {
                       className="border-t border-slate-600 hover:bg-slate-700 transition"
                     >
                       <td className="p-4">{doc.major_head}</td>
-                      <td className="p-4">
-                        {doc.tags && doc.tags.length > 0
-                          ? doc.tags.map((tag) => tag.tag_name).join(", ")
-                          : <span className="text-gray-400 italic">No tags</span>}
-                      </td>
                       <td className="p-4">{new Date(doc.document_date).toLocaleDateString("en-GB")}</td>
-                      <td className="p-4  space-x-3">
-                        <button className="text-blue-400 hover:underline">
-                          Preview
+                      <td className="p-4">{doc.document_remarks}</td>
+                      <td className="p-4 space-x-3">
+                        <button
+                          onClick={() => {
+                            setPreviewDoc(doc);
+                            setIsPreviewOpen(true);
+                          }}
+
+                          className="text-blue-400 "
+                        >
+                          <FaEye />
                         </button>
-                        <button className="text-green-400 hover:underline">
-                          Download
+
+                        <button
+                          onClick={() => handleDownload(doc)}
+                          className="text-green-400 "
+                        >
+                          <FaDownload />
                         </button>
                       </td>
                     </tr>
@@ -490,16 +523,48 @@ const Dashboard = () => {
             </div>
 
             {/* Tags */}
-            <div>
-              <label className="block mb-2">Tags</label>
+            <div className="flex flex-col col-span-2">
+              <label className="mb-2 text-sm">Tags</label>
+
               <input
                 type="text"
-                placeholder="Enter tags separated by commas (e.g., HR, 2024)"
-                className="dashboard-input text-black w-full"
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
+                placeholder="Search tags"
+                className="dashboard-input text-black w-full"
               />
+              {/* Suggestion tags */}
+              <div
+                className={`flex flex-wrap gap-2 mt-3 ${showAllTags ? "max-h-32 overflow-y-auto pr-2" : ""
+                  }`}
+              >
+                {(showAllTags ? allTags : allTags.slice(0, 5)).map((tag, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => {
+                      const newTag = tag.label || tag.tag_name;
+                      setTags(prev => prev ? `${prev}, ${newTag}` : newTag);
+                    }}
+                    className="px-3 py-1 bg-slate-700 rounded-full text-sm hover:bg-blue-600 transition"
+                  >
+                    {tag.label || tag.tag_name}
+                  </button>
+                ))}
+
+                {allTags.length > 5 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllTags(!showAllTags)}
+                    className="px-3 py-1 bg-gray-600 rounded-full text-sm hover:bg-gray-500 transition"
+                  >
+                    {showAllTags ? "Show Less" : "Show More"}
+                  </button>
+                )}
+              </div>
+
             </div>
+
 
             {/* Remarks */}
             <div>
@@ -560,8 +625,55 @@ const Dashboard = () => {
 
       </div>
 
+
+      {/* Preview Modal */}
+      {isPreviewOpen && previewDoc && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+
+          <div className="bg-transparent rounded-xl w-[80%] h-[80%] p-6 relative shadow-2xl">
+
+            {/* Close Button */}
+            <button
+              onClick={() => {
+                console.log("Doc :", previewDoc);
+                setIsPreviewOpen(false)
+              }}
+              className="absolute top-4 right-4 text-white text-xl font-bold"
+            >
+              ✕
+            </button>
+
+
+            {/* File Preview */}
+            <div className="w-full h-full overflow-auto">
+              {previewDoc.file_url.toLowerCase().includes(".pdf") ? (
+                <object
+                  data={previewDoc.file_url}
+                  type="application/pdf"
+                  className="w-full h-full"
+                >
+                </object>
+
+              ) : (
+                <img
+                  src={previewDoc.file_url}
+                  alt="Document Preview"
+                  className="max-h-full mx-auto rounded-lg object-contain"
+                />
+              )}
+            </div>
+
+          </div>
+        </div>
+      )
+      }
+
     </div>
   );
 };
+
+
+
+
 
 export default Dashboard;

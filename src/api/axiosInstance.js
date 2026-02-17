@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: "https://apis.allsoft.co/api/documentManagement",
+  baseURL: "/api/documentManagement",
   headers: {
     "Content-Type": "application/json",
   },
@@ -18,9 +18,6 @@ axiosInstance.interceptors.request.use((config) => {
   if (userId) {
     config.headers.user_id = userId;
   }
-
-  // Debugging: Check if headers are attached
-  console.log("Request Headers:", config.headers);
 
   return config;
 });
