@@ -85,19 +85,23 @@ const Login = () => {
     try {
 
       const response = await validateOtpApi(mobile, finalOtp);
-      // console.log(response);
 
-      const token = response.data.data?.token;
-        
+      if (response.data.status === true) {
 
-      if (token) {
+        const token = response.data.data?.token;
 
-        localStorage.setItem("token", token);
-        localStorage.setItem("user_id", response.data.data?.user_id);
-        
-        toast.success("OTP Verified");
-        navigate("/dashboard");
+        if (token) {
 
+          localStorage.setItem("token", token);
+          localStorage.setItem("user_id", response.data.data?.user_id);
+
+          toast.success("OTP Verified");
+          navigate("/dashboard");
+
+        }
+      }
+      else {
+        toast.error(response.data.message);
       }
 
     } catch (error) {

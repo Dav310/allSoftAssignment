@@ -95,8 +95,6 @@ const Dashboard = () => {
   //Handle Submit 
   const handleSubmit = async () => {
     const userId = localStorage.getItem("user_id");
-    console.log("User Id :", userId);
-
 
     if (!selectFile ||
       !category.trim() ||
@@ -120,7 +118,6 @@ const Dashboard = () => {
 
       // Convert tags to required format
       const formattedTags = formatTags(tags);
-      console.log("Formatted Tags:", formattedTags);
 
       // convert array into String
       formData.append(
@@ -196,7 +193,6 @@ const Dashboard = () => {
         { term: "" },
       );
 
-      console.log("Tags Data :", response.data);
       setAllTags(response.data.data || []);
 
     } catch (error) {
@@ -310,6 +306,17 @@ const Dashboard = () => {
               </select>
             </div>
 
+            {/* Tags */}
+            <div className="flex flex-col">
+              <label className="mb-2 text-sm">Tags</label>
+              <input
+                value={searchTags}
+                onChange={(e) => setSearchTags(e.target.value)}
+                type="text"
+                placeholder="Enter tags (comma separated)"
+                className="dashboard-input text-black w-full"
+              />
+            </div>
 
             {/* From Date */}
             <div className="flex flex-col">
@@ -321,6 +328,7 @@ const Dashboard = () => {
                 className="dashboard-input text-black w-full"
               />
             </div>
+
 
             {/* To Date */}
             <div className="flex flex-col">
@@ -538,13 +546,32 @@ const Dashboard = () => {
                 className={`flex flex-wrap gap-2 mt-3 ${showAllTags ? "max-h-32 overflow-y-auto pr-2" : ""
                   }`}
               >
-                {(showAllTags ? allTags : allTags.slice(0, 5)).map((tag, index) => (
+                {(showAllTags ? allTags : allTags.slice(1, 6)).map((tag, index) => (
                   <button
                     key={index}
                     type="button"
                     onClick={() => {
                       const newTag = tag.label || tag.tag_name;
-                      setTags(prev => prev ? `${prev}, ${newTag}` : newTag);
+
+                      setTags((prev) => {
+                        if (!prev) return newTag;
+
+                        const tagArray = prev.split(",").map((t) => t.trim());
+
+                        // Case-insensitive duplicate check
+                        const isDuplicate = tagArray.some(
+                          (t) => t.toLowerCase() === newTag.toLowerCase()
+                        );
+
+                        if (isDuplicate) {
+                          toast.error("Tag already exists", {
+                            toastId: "duplicate-tag-error",
+                          });
+                          return prev;
+                        }
+
+                        return [...tagArray, newTag].join(", ");
+                      });
                     }}
                     className="px-3 py-1 bg-slate-700 rounded-full text-sm hover:bg-blue-600 transition"
                   >
@@ -635,7 +662,6 @@ const Dashboard = () => {
             {/* Close Button */}
             <button
               onClick={() => {
-                console.log("Doc :", previewDoc);
                 setIsPreviewOpen(false)
               }}
               className="absolute top-4 right-4 text-white text-xl font-bold"
